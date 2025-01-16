@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WordPress Active Plugins Encoder/Decoder</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+        $(document).ready(function() {
+            
+            $('#decodeBtn').click(function() {
+                var returnData = '';
+                const serializedData = $('#textarea1').val();
+                
+                $.ajax({
+                    url: 'decode_plugins.php', 
+                    type: "POST", 
+                    dataType: "json",
+                    data: {
+                        q: serializedData
+                    }, 
+                    success: function (json) {
+                        $('#textarea2').html('<i>Decoded or encoded plugins will appear here... </i>'); 
+
+                        if(json.status == 'Success') { 
+                            $('#textarea2').html('');
+                            $plugin_list = ''; 
+                            $.map(json.plugins, function(val, i) {
+                                $plugin_list += `
+                                <div class="p-0">
+                                    <label for="check-${i}" class="border border-gray-800 hover:border-gray-800 bg-gray-900/70 hover:bg-gray-900 opacity-90 hover:opacity-100 p-3 px-4 rounded-lg text-sm gap-3 flex">
+                                        <input id="check-${i}" type="checkbox" class="rounded plugins" name="plugins[]" value="${val}" checked /> 
+                                        ${val}
+                                    </label>
+                                </div>`; 
+                            }); 
+
+                            $('#textarea2').html($plugin_list);
+                        }
+                    }
+                }); 
+            });
+
+            // Function to encode the list of plugins back into the WordPress active_plugins serialized format
+            $('#encodeBtn').click(function() {
+                var returnData = '';
+                
+                let plugins = $("#textarea2 input:checked")
+                    .map(function (){
+                    return $(this).val();
+                }).toArray();
+                
+                $.ajax({
+                    url: 'encode_plugins.php', 
+                    type: "POST", 
+                    dataType: "json",
+                    data: {
+                        q: plugins
+                    }, 
+                    success: function (json) {
+                        $('#textarea3').html(json.plugin_str);
+                    }
+                });
+
+                console.log(plugins);
+            });
+
+            $(document).on('click', '#textareabtn', function() {
+               
+                var textToCopy = $('#textarea3').text()
+
+                // Use the Clipboard API to copy the text
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    // Success: Notify the user
+                    alert('Text copied to clipboard!');
+                }).catch(function(err) {
+                    // Error handling
+                    console.error('Failed to copy text: ', err);
+                });
+            })
+        });
+    </script>
+    </head>
+
+    <body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col">
+        <!-- Header Section -->
+        <header class="bg-gray-800 py-8 text-center">
+            <h1
+                class="text-2xl font-semibold uppercase tracking-wider">WordPress
+                Active Plugins Encoder/Decoder</h1>
+        </header>
+
+        <!-- Main Content Section -->
+        <main class="flex flex-grow items-stretch container mx-auto p-6 ">
+            <div class="grid grid-cols-1 xl:grid-cols-7 gap-6 grow ">
+
+                <!-- Column 1: Textarea for active_plugins value -->
+                <div
+                    class="flex flex-col items-center bg-gray-800 p-6 rounded-lg shadow-md xl:col-span-3 ">
+                    <h2 class="text-xl font-semibold mb-5 uppercase">Active Plugins Code (Input)</h2>
+                    <p class="mb-4 text-gray-400 ">Place the text from the <span class="text-gray-200 italic font-semibold">option_value</span> field of <span class="text-gray-200 italic font-semibold">active_plugins</span> in <span class="text-gray-200 italic font-semibold">wp_options</span> and click the <span class="text-white font-semibold px-2 py-1 bg-blue-700 rounded-sm text-[10px] tracking-wider my-4 uppercase cursor-pointer" onClick="$('#decodeBtn').click()">decode</span> button. </p>
+
+                    <div class="grid col-1 gap-4 w-[100%]">
+                        <textarea id="textarea1" rows="18"
+                            class="grow w-full bg-gray-700 text-white p-4 pt-6 rounded-lg border border-gray-600"
+                            placeholder="Paste WordPress active_plugins serialized value here..."></textarea>
+
+                        <h3 class="text-xl text-center">Encoded Code</h3>
+                        <div class="grid">
+                            <button id="textareabtn" type="button"
+                                class="absolute justify-self-end p-1 pb-1.5 px-3 rounded rounded-tr-lg border border-gray-600 bg-gray-800/90 hover:bg-gray-900/80 text-xs">Copy</button>
+                            <div id="textarea3"
+                                class=" grid col-1 gap-2 rounded grow w-full bg-gray-700 text-white p-4 pt-6 rounded-lg border border-gray-600 min-h-[200px] text-wrap break-all">
+                                <span class="text-white/60">The code will be
+                                    generated here...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Decode and Encode Buttons -->
+                <div
+                    class="flex flex-col items-center bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Actions</h2>
+                    <button id="decodeBtn"
+                        class="bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 mb-4 rounded-lg transition duration-300 uppercase text-sm font-semibold tracking-wider">
+                        Decode </button>
+                    <button id="encodeBtn"
+                        class="bg-green-700 hover:bg-green-600 text-white px-6 py-3 mb-4 rounded-lg transition duration-300 uppercase text-sm font-semibold tracking-wider">
+                        Encode </button>
+                </div>
+
+                <!-- Column 3: Textarea for decoded/encoded plugins -->
+                <div
+                    class="flex flex-col items-center bg-gray-800 p-6 rounded-lg shadow-md xl:col-span-3">
+                    <h2 class="text-xl font-semibold mb-5 uppercase">Decoded/Encoded Plugins</h2>
+                    <p class="mb-4 text-gray-400 ">You can <span class="text-gray-200 italic font-semibold">check </span> or <span class="text-gray-200 italic font-semibold">uncheck</span> the required plugins and click on <span class="text-white font-semibold px-2 py-1 bg-green-700 rounded-sm text-[10px] tracking-wider my-4 uppercase cursor-pointer" onClick="$('#encodeBtn').click()" >encode</span> button. </p>
+                    <div id="textarea2" rows="10"
+                        class="grid col-1 gap-2 rounded grow w-full bg-gray-700 text-white p-4 pt-6 rounded-lg border border-gray-600">
+                        <span class="text-white/60">Decoded or encoded plugins will appear here...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Section -->
+        <footer class="bg-gray-800 text-white p-4 text-center">
+            <p>&copy; 2025 Your Company. All rights reserved.</p>
+        </footer>
+    </body>
+
+</html>
