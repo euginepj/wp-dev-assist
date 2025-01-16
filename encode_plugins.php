@@ -12,7 +12,7 @@ if(isset($_POST) AND isset($_POST['q']) and ($_POST['q'] != '')) {
         $plugin_list .= 'i:' . $k . ';s:' . $char . ':"'. $plugin .'";';
     }
 
-    $plugin_str = 'a:' . $k . ':{' . $plugin_list . '}';
+    $plugin_str = 'a:' . ($k+1) . ':{' . $plugin_list . '}';
 
     $return = ['status' => 'Success', 'message' => 'Able to process', 'plugin_str' => $plugin_str];
 } else { 
